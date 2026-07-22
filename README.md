@@ -28,14 +28,15 @@ https://chathub-r6gp.onrender.com
 5. Typing status and online-user lists update live via dedicated Socket.io events
 6. Exiting a room disconnects and resets the client, returning the user to the join screen to pick a new room
 
-## Project Structure
 chat-app/
-├── server.js           -> Express + Socket.io backend, MongoDB models and events
-├── package.json        -> Dependencies
-├── .env                 -> MongoDB connection string (not committed)
-├── .gitignore
+│
+├── server.js              # Express + Socket.io backend, MongoDB models, and socket events
+├── package.json           # Project metadata and dependencies
+├── .env                   # MongoDB connection string (not committed)
+├── .gitignore             # Files and folders ignored by Git
+│
 └── public/
-    └── index.html       -> Frontend (join screen + chat UI)
+    └── index.html         # Frontend (Join screen and chat interface)
 
 ## Setup Instructions
 1. Clone the repository:
@@ -63,7 +64,11 @@ chat-app/
 - Mobile-optimized layout
 
 ## Developed By
-Hardhik 
+
+**Hardhik** 
+
 Email: hardhik318@gmail.com
+
 GitHub: github.com/Hardhik-318
+
 LinkedIn: linkedin.com/in/hardhik-balla
