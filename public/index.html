@@ -235,7 +235,8 @@
       }
       username = nameVal;
       room = roomVal;
-
+      localStorage.setItem("username", username);
+      localStorage.setItem("room", room);
       socket.emit("join-room", { username, room });
 
       document.getElementById("join-screen").style.display = "none";
@@ -245,6 +246,8 @@
     }
 
     function exitRoom() {
+      localStorage.removeItem("username");
+      localStorage.removeItem("room");
       socket.disconnect();
       document.getElementById("chat-screen").style.display = "none";
       document.getElementById("join-screen").style.display = "flex";
@@ -307,6 +310,22 @@
     socket.on("stop-typing", () => {
       document.getElementById("typing-indicator").textContent = "";
     });
+    window.onload = () => {
+      const savedUsername = localStorage.getItem("username");
+      const savedRoom = localStorage.getItem("room");
+
+      if (savedUsername && savedRoom) {
+        username = savedUsername;
+        room = savedRoom;
+
+        socket.emit("join-room", { username, room });
+
+        document.getElementById("join-screen").style.display = "none";
+        document.getElementById("chat-screen").style.display = "flex";
+        document.getElementById("room-title").textContent = room;
+        document.getElementById("room-sub").textContent = `Joined as ${username}`;
+      }
+    };
   </script>
 </body>
 </html>
