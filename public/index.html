@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Real-time Chat</title>
+  <title>ChatHub</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -13,14 +13,23 @@
       background: #f4f6f8;
     }
 
-    /* ---------- Join Screen ---------- */
-    #join-screen {
+    /* ---------- CHANGED: both screens hidden by default ---------- */
+    #join-screen, #chat-screen { display: none; }
+
+    /* ---------- CHANGED: a class on <html>, set before paint, decides which one shows ---------- */
+    html.show-join #join-screen {
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
       background: linear-gradient(135deg, #120f47, #2008a7);
     }
+    html.show-chat #chat-screen {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
     #join-box {
       background: #fff;
       padding: 40px 36px;
@@ -60,13 +69,6 @@
     }
     #join-box button:hover { background: #4338ca; }
 
-    /* ---------- Chat Screen ---------- */
-    #chat-screen {
-      display: none;
-      flex: 1;
-      flex-direction: column;
-      height: 100vh;
-    }
     #chat-header {
       background: #161083;
       color: #fff;
@@ -180,6 +182,19 @@
     }
     #send-btn:hover { background: #4338ca; }
   </style>
+
+  <!-- NEW: runs synchronously in <head>, before <body> paints anything -->
+  <script>
+    (function () {
+      var savedUsername = localStorage.getItem("username");
+      var savedRoom = localStorage.getItem("room");
+      if (savedUsername && savedRoom) {
+        document.documentElement.classList.add("show-chat");
+      } else {
+        document.documentElement.classList.add("show-join");
+      }
+    })();
+  </script>
 </head>
 <body>
 
@@ -239,8 +254,9 @@
       localStorage.setItem("room", room);
       socket.emit("join-room", { username, room });
 
-      document.getElementById("join-screen").style.display = "none";
-      document.getElementById("chat-screen").style.display = "flex";
+      // CHANGED: toggle via the class instead of inline style
+      document.documentElement.classList.remove("show-join");
+      document.documentElement.classList.add("show-chat");
       document.getElementById("room-title").textContent = room;
       document.getElementById("room-sub").textContent = `Joined as ${username}`;
     }
@@ -249,13 +265,15 @@
       localStorage.removeItem("username");
       localStorage.removeItem("room");
       socket.disconnect();
-      document.getElementById("chat-screen").style.display = "none";
-      document.getElementById("join-screen").style.display = "flex";
+
+      // CHANGED: toggle via the class instead of inline style
+      document.documentElement.classList.remove("show-chat");
+      document.documentElement.classList.add("show-join");
       document.getElementById("log").innerHTML = "";
       document.getElementById("users-ul").innerHTML = "";
       document.getElementById("username-input").value = "";
       document.getElementById("room-input").value = "";
-      socket.connect(); // reconnect fresh for next join
+      socket.connect();
     }
 
     function send() {
@@ -310,6 +328,8 @@
     socket.on("stop-typing", () => {
       document.getElementById("typing-indicator").textContent = "";
     });
+
+    // CHANGED: only handles the SOCKET join now — screen visibility is already decided in <head>
     window.onload = () => {
       const savedUsername = localStorage.getItem("username");
       const savedRoom = localStorage.getItem("room");
@@ -317,11 +337,7 @@
       if (savedUsername && savedRoom) {
         username = savedUsername;
         room = savedRoom;
-
         socket.emit("join-room", { username, room });
-
-        document.getElementById("join-screen").style.display = "none";
-        document.getElementById("chat-screen").style.display = "flex";
         document.getElementById("room-title").textContent = room;
         document.getElementById("room-sub").textContent = `Joined as ${username}`;
       }
