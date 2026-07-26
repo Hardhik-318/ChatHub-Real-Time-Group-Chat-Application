@@ -51,12 +51,23 @@ io.on("connection", (socket) => {
   socket.on("stop-typing", () => socket.to(socket.room).emit("stop-typing", socket.username));
 
   socket.on("disconnect", () => {
-    if (socket.room && rooms[socket.room]) {
-      rooms[socket.room].delete(socket.id); // only removes THIS socket's entry
-      io.to(socket.room).emit("system", `${socket.username} left`);
-      io.to(socket.room).emit("user-list", Array.from(rooms[socket.room].values()));
-    }
-  });
+  if (socket.room && rooms[socket.room]) {
+    rooms[socket.room].delete(socket.id); // remove this connection immediately
+
+    const room = socket.room;
+    const username = socket.username;
+
+    // Wait briefly before announcing "left" — gives a refresh time to rejoin
+    setTimeout(() => {
+      if (!rooms[room]) return;
+      const stillPresent = Array.from(rooms[room].values()).includes(username);
+      if (!stillPresent) {
+        io.to(room).emit("system", `${username} left`);
+      }
+      io.to(room).emit("user-list", Array.from(rooms[room].values()));
+      }, 1500);
+      }
+    });
 });
 
 const PORT = 3000;
