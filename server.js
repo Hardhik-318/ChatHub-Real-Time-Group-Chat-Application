@@ -27,18 +27,25 @@ const rooms = {};
 
 io.on("connection", (socket) => {
   socket.on("join-room", async ({ username, room }) => {
-    socket.username = username;
-    socket.room = room;
-    socket.join(room);
+  socket.username = username;
+  socket.room = room;
+  socket.join(room);
 
-    if (!rooms[room]) rooms[room] = new Map();
-    rooms[room].set(socket.id, username); // keyed by THIS socket's id
+  if (!rooms[room]) rooms[room] = new Map();
 
-    io.to(room).emit("system", `${username} joined ${room}`);
-    io.to(room).emit("user-list", Array.from(rooms[room].values()));
+  // Remove any other connection already using this username (stale from a refresh)
+  for (const [id, name] of rooms[room].entries()) {
+    if (name === username && id !== socket.id) {
+      rooms[room].delete(id);
+    }
+  }
 
-    const history = await Message.find({ room }).sort({ timestamp: -1 }).limit(50);
-    socket.emit("history", history.reverse());
+  rooms[room].set(socket.id, username);
+
+  io.to(room).emit("user-list", Array.from(rooms[room].values()));
+
+  const history = await Message.find({ room }).sort({ timestamp: -1 }).limit(50);
+  socket.emit("history", history.reverse());
   });
 
   socket.on("message", async (text) => {
