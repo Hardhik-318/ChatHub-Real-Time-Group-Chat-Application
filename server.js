@@ -31,13 +31,12 @@ io.on("connection", (socket) => {
     socket.room = room;
     socket.join(room);
 
-    if (!rooms[room]) rooms[room] = new Set();
-    rooms[room].add(username);
+    if (!rooms[room]) rooms[room] = new Map();
+    rooms[room].set(socket.id, username); // keyed by THIS socket's id
 
     io.to(room).emit("system", `${username} joined ${room}`);
-    io.to(room).emit("user-list", Array.from(rooms[room]));
+    io.to(room).emit("user-list", Array.from(rooms[room].values()));
 
-    // Send the last 50 messages in this room to the newly joined client only
     const history = await Message.find({ room }).sort({ timestamp: -1 }).limit(50);
     socket.emit("history", history.reverse());
   });
@@ -45,8 +44,6 @@ io.on("connection", (socket) => {
   socket.on("message", async (text) => {
     const msg = { room: socket.room, user: socket.username, text };
     io.to(socket.room).emit("message", msg);
-
-    // Save to DB — don't block the broadcast waiting for this
     await Message.create(msg);
   });
 
@@ -55,9 +52,9 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     if (socket.room && rooms[socket.room]) {
-      rooms[socket.room].delete(socket.username);
+      rooms[socket.room].delete(socket.id); // only removes THIS socket's entry
       io.to(socket.room).emit("system", `${socket.username} left`);
-      io.to(socket.room).emit("user-list", Array.from(rooms[socket.room]));
+      io.to(socket.room).emit("user-list", Array.from(rooms[socket.room].values()));
     }
   });
 });
